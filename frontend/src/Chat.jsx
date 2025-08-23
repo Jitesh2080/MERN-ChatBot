@@ -7,6 +7,7 @@ const Chat = ({
   message,
   handleSendMessage,
   handleMessageChange,
+  handleImageUpload, // New prop
   onLogout,
 }) => {
   return (
@@ -22,7 +23,15 @@ const Chat = ({
             key={index}
             className={`message-bubble ${msg.isBot ? "bot" : "user"}`}
           >
-            {msg.text}
+            {msg.type === "image" ? (
+              <img
+                src={msg.url}
+                alt="Uploaded"
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
+            ) : (
+              msg.text
+            )}
           </div>
         ))}
       </div>
@@ -34,6 +43,17 @@ const Chat = ({
           placeholder="Type a message..."
           className="chat-input"
         />
+        {/* Hidden file input */}
+        <input
+          type="file"
+          id="file-upload"
+          style={{ display: "none" }}
+          onChange={handleImageUpload}
+        />
+        {/* Label acts as a button to trigger the hidden input */}
+        <label htmlFor="file-upload" className="file-upload-label">
+          📁
+        </label>
         <button type="submit" className="send-button">
           Send
         </button>

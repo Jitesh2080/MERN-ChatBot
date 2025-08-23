@@ -6,7 +6,6 @@ import Chat from "./Chat";
 const SOCKET_SERVER_URL = "http://localhost:5001/chat";
 
 const ChatLogic = ({ token, onLogout }) => {
-  // The token prop is received here
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [socket, setSocket] = useState(null);
@@ -14,8 +13,6 @@ const ChatLogic = ({ token, onLogout }) => {
   useEffect(() => {
     if (!token) return;
 
-    // The token is used here to create the authenticated socket connection
-    // here the clients first makes a connection request to the server and while making this connection request it has also passed the jwt token
     const newSocket = io(SOCKET_SERVER_URL, {
       query: { token },
     });
@@ -37,13 +34,43 @@ const ChatLogic = ({ token, onLogout }) => {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (message.trim() && socket) {
-      socket.emit("chat message", { text: message, isBot: false });
+      socket.emit("chat message", { text: message, type: "text" });
       setMessage("");
     }
   };
 
   const handleMessageChange = (e) => {
     setMessage(e.target.value);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("http://localhost:5001/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        // Send a message to the chat with the image URL and filename
+        socket.emit("chat message", {
+          text: "Image uploaded",
+          url: data.url,
+          filename: data.filename, // Add the filename here
+          type: "image",
+        });
+      } else {
+        console.error("Upload failed:", data.message);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
   };
 
   if (!token) {
@@ -56,6 +83,7 @@ const ChatLogic = ({ token, onLogout }) => {
       message={message}
       handleSendMessage={handleSendMessage}
       handleMessageChange={handleMessageChange}
+      handleImageUpload={handleImageUpload}
       onLogout={onLogout}
     />
   );
